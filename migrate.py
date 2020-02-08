@@ -1,7 +1,8 @@
-import CloudFlare
-import os
-import requests
 import json
+import os
+
+import CloudFlare
+import requests
 
 
 def main():

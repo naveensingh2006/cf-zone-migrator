@@ -101,5 +101,13 @@ def clear():
         _ = os.system('clear') 
 
 
+def sanity(x):
+    return x + 1
+
+
+def test_sanity():
+    assert sanity(3) == 4
+
+
 if __name__ == "__main__":
     main()

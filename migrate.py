@@ -79,7 +79,8 @@ def copy_firewall_rules(cf, src_zone_dict, dst_zone_dict):
     # print(target_firewall_rule_list)
 
     firewall_result = cf.zones.firewall.rules.post(dst_zone_dict['id'], data=target_firewall_rule_list)
-    print(json.dumps(firewall_result, indent=2))
+    for rule in firewall_result:
+        print("Created Rule - Id: {}  Description: {}".format(rule['id'], rule['description']))
 
     return
 

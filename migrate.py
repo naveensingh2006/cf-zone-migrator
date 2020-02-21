@@ -1,6 +1,6 @@
 import json
 import os
-
+import click
 import CloudFlare
 import click
 import requests
@@ -37,6 +37,49 @@ def main():
         copy_page_rules(cf, src_zone_dict, dst_zone_dict)
     else:
         print("Not copying page rules...")
+
+    if input("Copy Firewall Rules? <y/N>: ").lower() in ['y', 'yes']:
+        delete_filters(cf, dst_zone_dict)
+        copy_firewall_rules(cf, src_zone_dict, dst_zone_dict)
+    else:
+        print("Not copying firewall rules...")
+
+    return
+
+
+def delete_filters(cf, dst_zone_dict):
+    ''' Delete filters from Destination Zone '''
+    filter_list = cf.zones.filters.get(dst_zone_dict['id'])
+    clear()
+    for filter in filter_list:
+        delete_result = cf.zones.filters.delete(dst_zone_dict['id'], filter['id'])
+        print("Deleted: {}".format(delete_result))
+    return 
+
+
+def copy_firewall_rules(cf, src_zone_dict, dst_zone_dict):
+    ''' Copy firewall rules from Source Zone to Destination Zone '''
+    firewall_rules_list = cf.zones.firewall.rules.get(src_zone_dict['id'])
+    clear()
+    target_filter_list = []
+    for firewall_rule in firewall_rules_list:
+        if src_zone_dict['name'] in firewall_rule['filter']['expression']:
+            firewall_rule['filter']['expression'] = firewall_rule['filter']['expression'].replace(src_zone_dict['name'], dst_zone_dict['name'])
+        target_filter_list.append(firewall_rule['filter'])
+    filter_result = cf.zones.filters.post(dst_zone_dict['id'], data=target_filter_list)
+    # print(json.dumps(filter_result, indent=2))
+        
+    target_firewall_rule_list = []
+    for firewall_rule in firewall_rules_list:
+        for filter in filter_result:
+            if firewall_rule['filter']['expression'] == filter['expression']:
+                new_rule = firewall_rule
+                new_rule['filter']['id'] = filter['id']
+                target_firewall_rule_list.append(new_rule)
+    # print(target_firewall_rule_list)
+
+    firewall_result = cf.zones.firewall.rules.post(dst_zone_dict['id'], data=target_firewall_rule_list)
+    print(json.dumps(firewall_result, indent=2))
 
     return
 
